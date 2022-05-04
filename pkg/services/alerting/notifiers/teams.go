@@ -56,6 +56,11 @@ func (tn *TeamsNotifier) Notify(evalContext *alerting.EvalContext) error {
 	tn.log.Info("Executing teams notification", "ruleId", evalContext.Rule.ID, "notification", tn.Name)
 
 	ruleURL, err := evalContext.GetRuleURL()
+	/*
+		@ License: Grafana is distributed under AGPL-3.0-only
+		@ Edit date: 2022-05-03 / Edited: ADD "tn.log.Info("ruleURL:", ruleURL)"
+	*/
+	tn.log.Info("ruleURL:", ruleURL)
 	if err != nil {
 		tn.log.Error("Failed get rule link", "error", err)
 		return err
@@ -109,16 +114,20 @@ func (tn *TeamsNotifier) Notify(evalContext *alerting.EvalContext) error {
 			},
 		},
 		"potentialAction": []map[string]interface{}{
-			{
-				"@context": "http://schema.org",
-				"@type":    "OpenUri",
-				"name":     "View Rule",
-				"targets": []map[string]interface{}{
-					{
-						"os": "default", "uri": ruleURL,
-					},
-				},
-			},
+			/*
+				@ License: Grafana is distributed under AGPL-3.0-only
+				@ Edit date: 2022-05-03 / Edited: Commented out "View Rule"
+			*/
+			// {
+			// 	"@context": "http://schema.org",
+			// 	"@type":    "OpenUri",
+			// 	"name":     "View Rule",
+			// 	"targets": []map[string]interface{}{
+			// 		{
+			// 			"os": "default", "uri": ruleURL,
+			// 		},
+			// 	},
+			// },
 			{
 				"@context": "http://schema.org",
 				"@type":    "OpenUri",
@@ -142,3 +151,4 @@ func (tn *TeamsNotifier) Notify(evalContext *alerting.EvalContext) error {
 
 	return nil
 }
+

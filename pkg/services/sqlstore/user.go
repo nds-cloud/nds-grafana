@@ -59,7 +59,7 @@ func getOrgIdForNewUser(sess *DBSession, cmd *models.CreateUserCommand) (int64, 
 
 func CreateUser(ctx context.Context, cmd *models.CreateUserCommand) error {
 	return inTransactionCtx(ctx, func(sess *DBSession) error {
-		orgId, err := getOrgIdForNewUser(sess, cmd)
+		orgId, err := getOrgIdForNewUserByEmail(sess, cmd) // @ License: AGPL-3.0, Edited: getOrgIdForNewUser -> getOrgIdForNewUserByEmail
 		if err != nil {
 			return err
 		}
@@ -642,3 +642,73 @@ func validateOneAdminLeft(sess *DBSession) error {
 
 	return nil
 }
+/*
+@ License: Grafana is distributed under AGPL-3.0-only
+@ Edit date: 2022-05-03 / Edited: getOrgIdForNewUser -> getOrgIdForNewUserByEmail 
+*/
+func getOrgIdForNewUserByEmail(sess *DBSession, cmd *models.CreateUserCommand) (int64, error) {
+        if cmd.SkipOrgSetup {
+                return -1, nil
+        }
+
+        var org models.Org
+
+        if setting.AutoAssignOrg {
+                has, err := sess.Where("id=?", setting.AutoAssignOrgId).Get(&org)
+                if err != nil {
+                        return 0, err
+                }
+                if has {
+                        return org.Id, nil
+                }
+                if setting.AutoAssignOrgId == 1 {
+                        org.Name = "Main Org."
+                        org.Id = int64(setting.AutoAssignOrgId)
+                } else {
+                        sqlog.Info("Could not create user: organization id %v does not exist",
+                                setting.AutoAssignOrgId)
+                        return 0, fmt.Errorf("Could not create user: organization id %v does not exist",
+                                setting.AutoAssignOrgId)
+                }
+        } else {
+                org.Name = cmd.OrgName
+                if len(org.Name) == 0 {
+                        org.Name = util.StringsFallback2(cmd.Email, cmd.Login)
+//--- add begin
+                        var tmp = strings.Split(org.Name, "@")
+                        org.Name = tmp[len(tmp)-1]
+//--- add end
+                }
+//--- add begin
+                has, err := sess.Where("name=?", org.Name).Get(&org)
+                if err != nil {
+                        return 0, err
+                }
+                if has {
+                        return org.Id, nil
+                }
+//--- add end
+        }
+
+        org.Created = time.Now()
+        org.Updated = time.Now()
+
+        if org.Id != 0 {
+                if _, err := sess.InsertId(&org); err != nil {
+                        return 0, err
+                }
+        } else {
+                if _, err := sess.InsertOne(&org); err != nil {
+                        return 0, err
+                }
+        }
+
+        sess.publishAfterCommit(&events.OrgCreated{
+                Timestamp: org.Created,
+                Id:        org.Id,
+                Name:      org.Name,
+        })
+
+        return org.Id, nil
+}
+

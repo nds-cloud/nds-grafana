@@ -269,8 +269,8 @@ func (sn *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
 		"text":        msg,
 		"fallback":    evalContext.GetNotificationTitle(),
 		"fields":      fields,
-		"footer":      "Grafana v" + setting.BuildVersion,
-		"footer_icon": "https://grafana.com/assets/img/fav32.png",
+		"footer": "NDS NOC - Grafana v" + setting.BuildVersion, // @ License: AGPL-3.0, Edited: Add String "NDS NOC - "
+		"footer_icon": "https://nds-support-dashboard.s3.ap-northeast-2.amazonaws.com/static/logo_icon.png", // @ License: AGPL-3.0, Edited: change nongshime logo icon
 		"ts":          time.Now().Unix(),
 	}
 	if sn.NeedsImage() && imageURL != "" {
